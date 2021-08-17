@@ -20,14 +20,13 @@ def create_connection(db_file: str) -> None:
 
 def create_restaurant_table(conn: sqlite3.Connection,
                             sql_query: str) -> None:
-    print("hello")
     try:
         cursor = conn.cursor()
         cursor.execute("DROP TABLE IF EXISTS restaurants")
         cursor.execute(sql_query)
         print("Creating table 'restaurants'...")
     except Error as e:
-        print(f'Create table error: {e}')
+        print(f'Failed to create \'restaurants\' table: {e}')
     print("'restaurants' table created successfully.\n")
 
 
@@ -37,8 +36,10 @@ def create_address_table(conn: sqlite3.Connection,
         cursor = conn.cursor()
         cursor.execute("DROP TABLE IF EXISTS addresses")
         cursor.execute(sql_query)
+        print("Creating table 'addresses'...")
     except Error as e:
-        print(f'Create table error: {e}')
+        print(f'Failed to create \'addresses\' table: {e}')
+    print("'addresses' table created successfully.\n")
 
 
 def create_address(conn: sqlite3.Connection, addr: tuple) -> int:
@@ -76,7 +77,7 @@ def consume_csv(path: str, conn: sqlite3.Connection) -> None:
         reader = csv.reader(csv_file, delimiter=',')
         print(f'Adding rows from {path} to database...')
         for row in reader:
-            if num_rows == 0: # hacky way to skip headers line  and move to actual data
+            if num_rows == 0:  # hacky way to skip headers line and move to actual data
                 num_rows += 1
                 continue
             name = row[0]
@@ -95,7 +96,7 @@ def consume_csv(path: str, conn: sqlite3.Connection) -> None:
             create_restaurant(conn, r_tuple)
             num_rows += 1
             print(f'Added row for {name}.')
-    print(f'Number of rows added to DB: {num_rows}')
+    print(f'\nSuccessfully parsed {path}.\nNumber of rows added to the database: {num_rows-1}')
 
 
 def main():
@@ -137,18 +138,17 @@ def main():
     rest_tuple = titos.create_tuple()
     titos_tuple = titos_addr.create_tuple()
     conn = sqlite3.connect(db_file)
+    print(f'Opening connection to the database \'{db_file}\'...\n')
     if conn is not None:
         create_address_table(conn, addr_table)
         create_restaurant_table(conn, rest_table)
         create_address(conn, titos_tuple)
         create_restaurant(conn, rest_tuple)
     else:
-        print("Error creating tables.")
-    # with conn:
-    #     print(create_address(conn, titos_tuple))
-    #     print(create_restaurant(conn, rest_tuple))
+        print("There was an error making a connection to the database.")
     consume_csv(path=r'/Users/jaredrosen/Desktop/restaurants.csv', conn=conn)
     conn.close()
+    print("Database connection closed.")
 
 
 if __name__ == "__main__":

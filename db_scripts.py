@@ -20,12 +20,15 @@ def create_connection(db_file: str) -> None:
 
 def create_restaurant_table(conn: sqlite3.Connection,
                             sql_query: str) -> None:
+    print("hello")
     try:
         cursor = conn.cursor()
         cursor.execute("DROP TABLE IF EXISTS restaurants")
         cursor.execute(sql_query)
+        print("Creating table 'restaurants'...")
     except Error as e:
         print(f'Create table error: {e}')
+    print("'restaurants' table created successfully.\n")
 
 
 def create_address_table(conn: sqlite3.Connection,
@@ -67,15 +70,32 @@ def create_restaurant(conn: sqlite3.Connection, rest: tuple) -> int:
     return cursor.lastrowid
 
 
-def consume_csv(path: str, conn=None) -> str:
+def consume_csv(path: str, conn: sqlite3.Connection) -> None:
     num_rows = 0
     with open(file=path, newline='') as csv_file:
         reader = csv.reader(csv_file, delimiter=',')
+        print(f'Adding rows from {path} to database...')
         for row in reader:
-            print(row[0])
-            print(', '.join(row))
+            if num_rows == 0: # hacky way to skip headers line  and move to actual data
+                num_rows += 1
+                continue
+            name = row[0]
+            website = row[1]
+            phone = row[2]
+            lat = row[3]
+            longitude = row[4]
+            cuisine = row[5]
+            new_restaurant = restaurants.Restaurant(name=name,
+                                                    website=website,
+                                                    phone_num=phone,
+                                                    lat=float(lat),
+                                                    long=float(longitude),
+                                                    cuisine=cuisine)
+            r_tuple = new_restaurant.create_tuple()
+            create_restaurant(conn, r_tuple)
             num_rows += 1
-    return f'Number of rows added to DB: {num_rows}'
+            print(f'Added row for {name}.')
+    print(f'Number of rows added to DB: {num_rows}')
 
 
 def main():
@@ -120,13 +140,15 @@ def main():
     if conn is not None:
         create_address_table(conn, addr_table)
         create_restaurant_table(conn, rest_table)
+        create_address(conn, titos_tuple)
+        create_restaurant(conn, rest_tuple)
     else:
         print("Error creating tables.")
-    with conn:
-        print(create_address(conn, titos_tuple))
-        print(create_restaurant(conn, rest_tuple))
+    # with conn:
+    #     print(create_address(conn, titos_tuple))
+    #     print(create_restaurant(conn, rest_tuple))
+    consume_csv(path=r'/Users/jaredrosen/Desktop/restaurants.csv', conn=conn)
     conn.close()
-    consume_csv(r'/Users/jaredrosen/Desktop/restaurants.csv')
 
 
 if __name__ == "__main__":

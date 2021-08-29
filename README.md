@@ -1,7 +1,6 @@
 # RestaurantPicker
 
-This project was inspired by me and my family never knowing where we want to eat, even though we've been to a variety of great places.
-Here I wanted to practice my general Object-Oriented programming, Python, and SQL database querying skills.
+I wanted to make a kind of restaurant journal where I can note which places I've been to and which places I plan on going to. Plus, people are always recommending certain place so I wanted to make something where I can jot those down!
 
 # DONE
 - Creating Restaurant and Address classes, for easy creation, validation, and implementation in the SQLite database

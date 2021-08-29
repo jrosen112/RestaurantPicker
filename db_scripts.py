@@ -71,32 +71,71 @@ def create_restaurant(conn: sqlite3.Connection, rest: tuple) -> int:
     return cursor.lastrowid
 
 
-def consume_csv(path: str, conn: sqlite3.Connection) -> None:
+def consume_csv(filetype: str, path: str, conn: sqlite3.Connection) -> None:
     num_rows = 0
-    with open(file=path, newline='') as csv_file:
-        reader = csv.reader(csv_file, delimiter=',')
-        print(f'Adding rows from {path} to database...')
-        for row in reader:
-            if num_rows == 0:  # hacky way to skip headers line and move to actual data
+    types = ["address", "restaurant"]
+    if filetype not in types:
+        print("CSV file must contain information on either Restaurants or Addresses.")
+        return
+    if filetype == types[1]:
+        with open(file=path, newline='') as csv_file:
+            reader = csv.reader(csv_file, delimiter=',')
+            print(f'Adding rows from {path} to database...')
+            for row in reader:
+                if num_rows == 0:  # hacky way to skip headers line and move to actual data
+                    num_rows += 1
+                    continue
+                name = row[0]
+                website = row[1]
+                phone = row[2]
+                lat = row[3]
+                longitude = row[4]
+                cuisine = row[5]
+                new_restaurant = restaurants.Restaurant(name=name,
+                                                        website=website,
+                                                        phone_num=phone,
+                                                        lat=float(lat),
+                                                        long=float(longitude),
+                                                        cuisine=cuisine)
+                r_tuple = new_restaurant.create_tuple()
+                create_restaurant(conn, r_tuple)
                 num_rows += 1
-                continue
-            name = row[0]
-            website = row[1]
-            phone = row[2]
-            lat = row[3]
-            longitude = row[4]
-            cuisine = row[5]
-            new_restaurant = restaurants.Restaurant(name=name,
-                                                    website=website,
-                                                    phone_num=phone,
-                                                    lat=float(lat),
-                                                    long=float(longitude),
-                                                    cuisine=cuisine)
-            r_tuple = new_restaurant.create_tuple()
-            create_restaurant(conn, r_tuple)
-            num_rows += 1
-            print(f'Added row for {name}.')
-    print(f'\nSuccessfully parsed {path}.\nNumber of rows added to the database: {num_rows-1}')
+                print(f'Added row for {name}.')
+    if filetype == types[2]:
+        with open(file=path, newline='') as csv_file:
+            reader = csv.reader(csv_file, delimiter=',')
+            print(f'Adding rows from {path} to database...')
+            for row in reader:
+                if num_rows == 0:
+                    num_rows += 1
+                    continue
+                if len(row) == 5:
+                    street_addr = row[0]
+                    apt_num = row[1]
+                    city = row[2]
+                    state = row[3]
+                    zipcode = row[4]
+                    new_addr = address.Address(street_addr=street_addr,
+                                               apt_num=apt_num,
+                                               city=city,
+                                               state=state,
+                                               zipcode=zipcode)
+                    addr_tuple = new_addr.create_tuple()
+                    create_address(conn, addr_tuple)
+                else:
+                    street_addr = row[0]
+                    city = row[1]
+                    state = row[2]
+                    zipcode = row[3]
+                    new_addr = address.Address(street_addr=street_addr,
+                                               city=city,
+                                               state=state,
+                                               zipcode=zipcode)
+                    addr_tuple = new_addr.create_tuple()
+                    create_address(conn, addr_tuple)
+                num_rows += 1
+                print(f'Added new address.')
+    print(f'\nSuccessfully parsed {path}.\nNumber of rows added to the database: {num_rows-1}\n')
 
 
 def main():
@@ -146,7 +185,7 @@ def main():
         create_restaurant(conn, rest_tuple)
     else:
         print("There was an error making a connection to the database.")
-    consume_csv(path=r'/Users/jaredrosen/Desktop/restaurants.csv', conn=conn)
+    consume_csv(filetype="restaurant", path=r'/Users/jaredrosen/Desktop/restaurants.csv', conn=conn)
     conn.close()
     print("Database connection closed.")
 
